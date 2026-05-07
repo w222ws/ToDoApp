@@ -1,33 +1,97 @@
 /* =========================================================
-   TaskFlow — script.js (ПОВНА ВЕРСІЯ: CRUD + Фільтри)
+   TaskFlow — script.js (Еталонна версія)
    ========================================================= */
 
 // 1. СТАН (STATE)
 let tasks = [];
 let currentPriority = "low";
-let filter = "all"; // Може бути: 'all', 'active', 'done', 'high'
+let filter = "all";
 
-// 2. СЕЛЕКТОРИ
+// 2. СЕЛЕКТОРИ (Елементи з HTML)
 const taskInput = document.getElementById("taskInput");
 const addBtn = document.getElementById("addBtn");
 const tasksList = document.getElementById("tasksList");
-const statTotal = document.getElementById("statTotal");
-const statActive = document.getElementById("statActive");
-const statDone = document.getElementById("statDone");
-const progressFill = document.getElementById("progressFill");
-const progressLabel = document.getElementById("progressLabel");
-const clearDoneBtn = document.getElementById("clearDone");
 
-// 3. ГОЛОВНА ФУНКЦІЯ МАЛЮВАННЯ (RENDER)
+// 3. ФУНКЦІЇ-ЗАПИТИ ДО СЕРВЕРА (API)
+
+// Отримати всі задачі при старті
+async function fetchTasks() {
+  try {
+    const response = await fetch("/api/tasks");
+    tasks = await response.json();
+    renderTasks();
+  } catch (error) {
+    console.error("Помилка завантаження:", error);
+  }
+}
+
+// Додати нову задачу
+async function addTask() {
+  const text = taskInput.value.trim();
+  if (!text) return;
+
+  const newTaskData = { text, priority: currentPriority };
+
+  try {
+    const response = await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newTaskData),
+    });
+
+    if (response.ok) {
+      const savedTask = await response.json();
+      tasks.push(savedTask);
+      taskInput.value = "";
+      renderTasks();
+    }
+  } catch (error) {
+    console.error("Помилка додавання:", error);
+  }
+}
+
+// Видалити задачу
+async function deleteTask(id) {
+  try {
+    const response = await fetch(`/api/tasks/${id}`, {
+      method: "DELETE",
+    });
+
+    if (response.ok) {
+      tasks = tasks.filter((t) => t.id !== id);
+      renderTasks();
+    }
+  } catch (error) {
+    console.error("Помилка видалення:", error);
+  }
+}
+
+// Змінити статус (Виконано/Не виконано)
+async function toggleTask(id) {
+  try {
+    const response = await fetch(`/api/tasks/${id}`, {
+      method: "PATCH",
+    });
+
+    if (response.ok) {
+      const updatedTask = await response.json();
+      tasks = tasks.map((t) => (t.id === id ? updatedTask : t));
+      renderTasks();
+    }
+  } catch (error) {
+    console.error("Помилка зміни статусу:", error);
+  }
+}
+
+// 4. МАЛЮВАННЯ ІНТЕРФЕЙСУ (RENDER)
 function renderTasks() {
   tasksList.innerHTML = "";
 
-  // --- ЛОГІКА ФІЛЬТРАЦІЇ ---
   const filteredTasks = tasks.filter((task) => {
     if (filter === "active") return !task.done;
     if (filter === "done") return task.done;
     if (filter === "high") return task.priority === "high";
-    return true; // для 'all'
+    return true;
   });
 
   if (filteredTasks.length === 0) {
@@ -56,65 +120,40 @@ function renderTasks() {
   updateStats();
 }
 
-// 4. ДІЇ ІЗ ЗАДАЧАМИ (ACTIONS)
-function addTask() {
-  const text = taskInput.value.trim();
-  if (!text) return;
-
-  const newTask = {
-    id: Date.now().toString(),
-    text: text,
-    priority: currentPriority,
-    done: false,
-  };
-
-  tasks.push(newTask);
-  taskInput.value = "";
-  renderTasks();
-}
-
-function deleteTask(id) {
-  tasks = tasks.filter((t) => t.id !== id);
-  renderTasks();
-}
-
-function toggleTask(id) {
-  const task = tasks.find((t) => t.id === id);
-  if (task) task.done = !task.done;
-  renderTasks();
-}
-
-// Очистити всі виконані
-function clearCompleted() {
-  tasks = tasks.filter((t) => !t.done);
-  renderTasks();
-}
-
-// 5. ОНОВЛЕННЯ СТАТИСТИКИ
 function updateStats() {
   const total = tasks.length;
   const doneCount = tasks.filter((t) => t.done).length;
-  const activeCount = total - doneCount;
   const percent = total === 0 ? 0 : Math.round((doneCount / total) * 100);
 
-  statTotal.innerText = total;
-  statActive.innerText = activeCount;
-  statDone.innerText = doneCount;
-  progressFill.style.width = `${percent}%`;
-  progressLabel.innerText = `${percent}%`;
+  document.getElementById("statTotal").innerText = total;
+  document.getElementById("statActive").innerText = total - doneCount;
+  document.getElementById("statDone").innerText = doneCount;
+  document.getElementById("progressFill").style.width = `${percent}%`;
+  document.getElementById("progressLabel").innerText = `${percent}%`;
 }
 
-// 6. ІВЕНТИ (EVENT LISTENERS)[cite: 2]
-
+// 5. ІВЕНТИ (Слухачі подій)
 addBtn.onclick = addTask;
 
 taskInput.onkeypress = (e) => {
   if (e.key === "Enter") addTask();
 };
 
-clearDoneBtn.onclick = clearCompleted;
+const clearDoneBtn = document.getElementById("clearDone");
 
-// Вибір пріоритету
+clearDoneBtn.onclick = async () => {
+  if (!confirm("Видалити всі важливі задачі?")) return;
+
+  // Шукаємо тільки важливі (high)
+  const highPriorityTasks = tasks.filter((t) => t.priority === "high");
+
+  // Видаляємо їх по черзі через наш fetch-запит
+  for (const task of highPriorityTasks) {
+    await deleteTask(task.id);
+  }
+  console.log("Всі важливі видалені!");
+};
+
 document.querySelectorAll(".prio-btn").forEach((btn) => {
   btn.onclick = () => {
     document
@@ -125,17 +164,16 @@ document.querySelectorAll(".prio-btn").forEach((btn) => {
   };
 });
 
-// Керування фільтрами (All, Active, Completed)
 document.querySelectorAll(".filter-btn").forEach((btn) => {
   btn.onclick = () => {
     document
       .querySelectorAll(".filter-btn")
       .forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
-    filter = btn.dataset.f; // Беремо значення фільтра з data-f
+    filter = btn.dataset.f;
     renderTasks();
   };
 });
 
-// Запуск при старті
-renderTasks();
+// 6. СТАРТ
+fetchTasks();
