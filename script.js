@@ -1,20 +1,21 @@
 /* =========================================================
-   TaskFlow — script.js (Еталонна версія)
+   TaskFlow — script.js (Fullstack Edition)
    ========================================================= */
 
-// 1. СТАН (STATE)
+// 1. СТАН ДОДАТКУ
 let tasks = [];
-let currentPriority = "low";
+let currentPriority = "low"; // за замовчуванням
 let filter = "all";
 
-// 2. СЕЛЕКТОРИ (Елементи з HTML)
+// 2. ЕЛЕМЕНТИ
 const taskInput = document.getElementById("taskInput");
 const addBtn = document.getElementById("addBtn");
 const tasksList = document.getElementById("tasksList");
+const clearAllBtn = document.getElementById("clearDone"); // Твоя кнопка очищення
 
-// 3. ФУНКЦІЇ-ЗАПИТИ ДО СЕРВЕРА (API)
+// 3. РОБОТА З СЕРВЕРОМ (API)
 
-// Отримати всі задачі при старті
+// Отримати всі задачі
 async function fetchTasks() {
   try {
     const response = await fetch("/api/tasks");
@@ -25,7 +26,7 @@ async function fetchTasks() {
   }
 }
 
-// Додати нову задачу
+// Додати задачу
 async function addTask() {
   const text = taskInput.value.trim();
   if (!text) return;
@@ -50,15 +51,13 @@ async function addTask() {
   }
 }
 
-// Видалити задачу
+// Видалити одну задачу
 async function deleteTask(id) {
   try {
-    const response = await fetch(`/api/tasks/${id}`, {
-      method: "DELETE",
-    });
-
+    const response = await fetch(`/api/tasks/${id}`, { method: "DELETE" });
     if (response.ok) {
-      tasks = tasks.filter((t) => t.id !== id);
+      // Видаляємо з локального масиву (String для надійності)
+      tasks = tasks.filter((t) => String(t.id) !== String(id));
       renderTasks();
     }
   } catch (error) {
@@ -66,24 +65,22 @@ async function deleteTask(id) {
   }
 }
 
-// Змінити статус (Виконано/Не виконано)
+// Змінити статус (PATCH - той самий 4-й метод!)
 async function toggleTask(id) {
   try {
-    const response = await fetch(`/api/tasks/${id}`, {
-      method: "PATCH",
-    });
-
+    const response = await fetch(`/api/tasks/${id}`, { method: "PATCH" });
     if (response.ok) {
       const updatedTask = await response.json();
-      tasks = tasks.map((t) => (t.id === id ? updatedTask : t));
+      tasks = tasks.map((t) => (String(t.id) === String(id) ? updatedTask : t));
       renderTasks();
     }
   } catch (error) {
-    console.error("Помилка зміни статусу:", error);
+    console.error("Помилка оновлення:", error);
   }
 }
 
-// 4. МАЛЮВАННЯ ІНТЕРФЕЙСУ (RENDER)
+// 4. ЛОГІКА МАЛЮВАННЯ (UI)
+
 function renderTasks() {
   tasksList.innerHTML = "";
 
@@ -100,6 +97,7 @@ function renderTasks() {
 
   filteredTasks.forEach((task) => {
     const taskItem = document.createElement("div");
+    // Додаємо класи для фарбування з CSS
     taskItem.className = `task-item prio-${task.priority} ${task.done ? "done" : ""}`;
 
     taskItem.innerHTML = `
@@ -132,38 +130,45 @@ function updateStats() {
   document.getElementById("progressLabel").innerText = `${percent}%`;
 }
 
-// 5. ІВЕНТИ (Слухачі подій)
+// 5. ІВЕНТИ (Слухачі)
+
 addBtn.onclick = addTask;
 
 taskInput.onkeypress = (e) => {
   if (e.key === "Enter") addTask();
 };
 
-const clearDoneBtn = document.getElementById("clearDone");
+// --- CLEAR ALL (Видалити ВСЕ) ---
+clearAllBtn.onclick = async () => {
+  if (!confirm("Видалити взагалі всі задачі?")) return;
 
-clearDoneBtn.onclick = async () => {
-  if (!confirm("Видалити всі важливі задачі?")) return;
-
-  // Шукаємо тільки важливі (high)
-  const highPriorityTasks = tasks.filter((t) => t.priority === "high");
-
-  // Видаляємо їх по черзі через наш fetch-запит
-  for (const task of highPriorityTasks) {
-    await deleteTask(task.id);
+  try {
+    // Видаляємо всі по черзі
+    for (const task of tasks) {
+      await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
+    }
+    await fetchTasks(); // Перезавантажуємо пустий список
+    alert("Все чисто, лодарю! :)");
+  } catch (error) {
+    console.error("Помилка масового видалення:", error);
   }
-  console.log("Всі важливі видалені!");
 };
 
+// --- ПРІОРИТЕТИ (Твій CSS запрацює тут) ---
 document.querySelectorAll(".prio-btn").forEach((btn) => {
   btn.onclick = () => {
+    // Знімаємо active у всіх
     document
       .querySelectorAll(".prio-btn")
       .forEach((b) => b.classList.remove("active"));
+    // Додаємо active поточній
     btn.classList.add("active");
+    // Оновлюємо змінну (важливо, щоб співпадало з data-p в HTML)
     currentPriority = btn.dataset.p;
   };
 });
 
+// --- ФІЛЬТРИ ---
 document.querySelectorAll(".filter-btn").forEach((btn) => {
   btn.onclick = () => {
     document
@@ -175,5 +180,5 @@ document.querySelectorAll(".filter-btn").forEach((btn) => {
   };
 });
 
-// 6. СТАРТ
+// 6. ПУСК
 fetchTasks();

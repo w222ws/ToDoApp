@@ -45,14 +45,15 @@
       </section>
 
       <!-- ======= ПРОГРЕС ======= -->
-      <div class="progress-wrap" aria-label="Прогрес виконання">
-        <div class="progress-bar">
-          <div class="progress-fill" id="progressFill"></div>
-        </div>
-        <span class="progress-label" id="progressLabel">0%</span>
+      <div class="progress-container">
+        <div id="progressFill" class="progress-fill"></div>
       </div>
+      <span id="progressLabel">0%</span>
 
-      <!-- ======= ФОРМА ДОДАВАННЯ ======= -->
+      <span id="statTotal">0</span>
+      <span id="statActive">0</span>
+
+      <!-- ======= ФОРМА ДОДАВАННЯ  ======= -->
       <section class="input-section" aria-label="Додати завдання">
         <div class="input-card" id="inputCard">
           <div class="input-row">
@@ -102,9 +103,9 @@
         <button class="filter-btn active" data-f="all">All</button>
         <button class="filter-btn" data-f="active">Active</button>
         <button class="filter-btn" data-f="done">Completed</button>
-        <button class="filter-btn" data-f="high">🔴 Important</button>
+        <button class="filter-btn" data-f="high">High Priority</button>
         <button class="filter-clear" id="clearDone" title="Очистити виконані">
-          Important ✕
+          Clear All ✕
         </button>
       </nav>
 
