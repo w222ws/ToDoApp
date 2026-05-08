@@ -3,40 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TaskFlow — Мої Завдання</title>
+    <title>TaskFlow — Productivity Pro</title>
     <link rel="stylesheet" href="style.css" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap"
       rel="stylesheet"
     />
   </head>
   <body>
-    <!-- ======= ФОНОВІ ДЕКОРАЦІЇ ======= -->
     <div class="bg-glow"></div>
     <div class="bg-grid"></div>
 
     <div class="wrapper">
-      <!-- ======= ХЕДЕР ======= -->
       <header class="header">
         <div class="logo">
           <div class="logo-icon">✦</div>
           <div class="logo-meta">
             <h1 class="logo-title">TaskFlow</h1>
-            <p class="logo-sub">Your Personal Task Manager</p>
+            <p class="logo-sub">Focus on what matters</p>
           </div>
         </div>
-        <div class="header-date" id="headerDate"></div>
       </header>
 
-      <!-- ======= СТАТИСТИКА ======= -->
-      <section class="stats-row" aria-label="Статистика задач">
+      <section class="stats-row">
         <div class="stat-card">
           <span class="stat-num accent" id="statTotal">0</span>
-          <span class="stat-label">Total</span>
+          <span class="stat-label">Total Tasks</span>
         </div>
         <div class="stat-card">
           <span class="stat-num" id="statActive">0</span>
-          <span class="stat-label">Active</span>
+          <span class="stat-label">In Progress</span>
         </div>
         <div class="stat-card">
           <span class="stat-num green" id="statDone">0</span>
@@ -44,83 +40,53 @@
         </div>
       </section>
 
-      <!-- ======= ПРОГРЕС ======= -->
-      <div class="progress-container">
-        <div id="progressFill" class="progress-fill"></div>
+      <div class="progress-wrap">
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill"></div>
+        </div>
+        <span class="progress-label" id="progressLabel">0%</span>
       </div>
-      <span id="progressLabel">0%</span>
 
-      <span id="statTotal">0</span>
-      <span id="statActive">0</span>
-
-      <!-- ======= ФОРМА ДОДАВАННЯ  ======= -->
-      <section class="input-section" aria-label="Додати завдання">
-        <div class="input-card" id="inputCard">
+      <section class="input-section">
+        <div class="input-card">
           <div class="input-row">
             <input
               type="text"
               id="taskInput"
               class="task-input"
-              placeholder="+ Add a new task"
+              placeholder="What needs to be done?"
               maxlength="140"
-              autocomplete="off"
-              aria-label="Текст завдання"
             />
-            <button class="add-btn" id="addBtn" aria-label="Додати">
+            <button class="add-btn" id="addBtn">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                stroke-width="2.5"
-                stroke-linecap="round"
+                stroke-width="3"
               >
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
             </button>
           </div>
-          <div class="priority-row" role="group" aria-label="Пріоритет">
-            <span class="priority-label">Priority:</span>
-            <button class="prio-btn" data-p="high" aria-pressed="false">
-              🔴 High
-            </button>
-            <button class="prio-btn" data-p="med" aria-pressed="false">
-              🟡 Medium
-            </button>
-            <button
-              class="prio-btn active low"
-              data-p="low"
-              aria-pressed="true"
-            >
-              🟢 Low
-            </button>
+          <div class="priority-row">
+            <span class="priority-label">Set Priority:</span>
+            <button class="prio-btn high" data-p="high">🔴 High</button>
+            <button class="prio-btn med" data-p="med">🟡 Med</button>
+            <button class="prio-btn low active" data-p="low">🟢 Low</button>
           </div>
         </div>
       </section>
 
-      <!-- ======= ФІЛЬТРИ ======= -->
-      <nav class="filters" aria-label="Фільтр задач">
+      <nav class="filters">
         <button class="filter-btn active" data-f="all">All</button>
         <button class="filter-btn" data-f="active">Active</button>
-        <button class="filter-btn" data-f="done">Completed</button>
-        <button class="filter-btn" data-f="high">High Priority</button>
-        <button class="filter-clear" id="clearDone" title="Очистити виконані">
-          Clear All ✕
-        </button>
+        <button class="filter-btn" data-f="done">Done</button>
+        <button class="filter-clear" id="clearDone">Clear All ✕</button>
       </nav>
 
-      <!-- ======= СПИСОК ЗАДАЧ ======= -->
-      <main
-        class="tasks-list"
-        id="tasksList"
-        aria-live="polite"
-        aria-label="Список задач"
-      >
-        <!-- задачі рендеряться через JS -->
-      </main>
+      <main class="tasks-list" id="tasksList"></main>
     </div>
-    <!-- /wrapper -->
-
     <script src="script.js"></script>
   </body>
 </html>
