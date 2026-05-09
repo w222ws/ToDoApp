@@ -1,6 +1,5 @@
-// 1. СТАН ДОДАТКУ
 let tasks = [];
-let currentPriority = "low";
+let currentPriority = "low"; // за замовчуванням
 let filter = "all";
 
 // 2. ЕЛЕМЕНТИ (DOM)
