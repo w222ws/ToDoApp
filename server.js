@@ -23,7 +23,7 @@ let tasks = fs.existsSync(FILE_PATH)
 const validateTask = (req, res, next) => {
   const { text } = req.body;
   if (!text || text.trim() === "") {
-    console.log("❌ Помилка: Спроба додати порожню задачу");
+    console.log("Помилка: Спроба додати порожню задачу");
     return res.status(400).json({ error: "Текст не може бути порожнім!" });
   }
   next();
@@ -46,7 +46,7 @@ app.post("/api/tasks", validateTask, (req, res) => {
   };
   tasks.push(newTask);
   saveToFile(); // Зберігаємо в файл
-  console.log("✅ Додано:", newTask.text);
+  console.log("Додано:", newTask.text);
   res.status(201).json(newTask);
 });
 
@@ -55,7 +55,7 @@ app.delete("/api/tasks/:id", (req, res) => {
   const { id } = req.params;
   tasks = tasks.filter((t) => t.id.toString() !== id.toString());
   saveToFile(); // Зберігаємо зміни
-  console.log("🗑️ Видалено ID:", id);
+  console.log("Видалено ID:", id);
   res.status(204).send();
 });
 
@@ -72,21 +72,19 @@ app.patch("/api/tasks/:id", (req, res) => {
   }
 });
 
-// метод пут, оновка тексту, вказали метод, указали адресу, апи таскс получаємо айді і текст, а що за валідате таск? це наша валідація щоб же ж не кинули пусте і т.д)) ну і понятно кидаємо запрос відп, айді відповідь парамс, шо це?? не розумію і чому айді в обьект?? а щоб віддати норм в таскс жсон,
-app.put("/api/tasks/:id/text", validateTask, (req, res) => {
-  const { id } = req.params;
-  const { text } = req.body; // ось розумію запрос в тіло текста тип)) а шо такое парамс? ну айди відповідь, хз путаю просто ссорі))
+// Ми використовуємо PATCH, бо міняємо тільки шматочок (текст)
+app.patch("/api/tasks/:id/text", validateTask, (req, res) => {
+  const { id } = req.params; // Витягли ID з адреси
+  const { text } = req.body; // Витягли новий ТЕКСТ з тіла запиту (JSON)
 
-  // кост задача, задачі фінд юзаємо це знайти перший елемент по умові та взяти його, тобто ми беремо айді в стрінг і рівняємо типо шоб не було числом а віддалось строкою!
   const task = tasks.find((t) => t.id.toString() === id.toString());
 
-  // умова, завдання текста порівнюємо старі і нові, робимо сенд якщо все чотка)) ну і понятно відповідь в жсон нової задачі, то так зване якщо, тобто елсе, віддаємо просто помилку 404 та задачу не знайдено)) натурі бєк в мене легше йде, хз чому так) я ріл читаю код та краще розумію сам бачиш хз))
   if (task) {
-    task.text = text;
-    saveToFile();
-    res.json(task);
+    task.text = text; // Оновили текст у нашому масиві
+    saveToFile(); // Записали в блокнот (tasks.json)
+    res.json(task); // Віддали оновлену задачу фронтенду
   } else {
-    res.status(404).json({ error: "Задача не найдена!" });
+    res.status(404).json({ error: "Задача не знайдена!" });
   }
 });
 

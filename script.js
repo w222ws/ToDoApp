@@ -56,6 +56,15 @@ async function deleteTask(id) {
   }
 }
 
+async function handleEditText(id, oldText) {
+  const newText = prompt("Редагувати задачу:", oldText);
+
+  if (newText !== null && newText.trim() !== "") {
+    // Викликаємо твій метод API, який ми писали раніше
+    await editTaskText(id, newText.trim());
+  }
+}
+
 async function toggleTask(id) {
   try {
     const response = await fetch(`/api/tasks/${id}`, { method: "PATCH" });
@@ -69,7 +78,6 @@ async function toggleTask(id) {
   }
 }
 
-// редачить текст тасків, розписую розуміння, даємо знати що буде авайт тому позначаємо функцію асунсом як асинхронку, та даємо в дужки айді та новий текст обнова замість старого, інше як і було, тру типо типу це як перший варік як я розумію чи що, конст відповідь, юзаємо фетч, це наш вказівник на сервер прокладаємо шлях, до апі тасків, по айді і змінна тексту, метод патч зміни патч, голова типу типу шоб бачив файли жсон, тело передаешь типо жсон строчка новий текст отдаешь задачі, ну і все по цьому блоку виправляй всі помилки та добавляй що так не так і т.д
 async function editTaskText(id, newText) {
   try {
     const response = await fetch(`/api/tasks/${id}/text`, {
@@ -77,8 +85,6 @@ async function editTaskText(id, newText) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: newText }),
     });
-
-    //  условіє типу наша відповідь ок, оновленний таск авайт респонс ну понятно отдаем в жсон же, обновили массив і йдемо рендер робимо, типу про мапили, строку перевірили, айді, текс, і видаємо результ типу)) ну і в кінці правильно, кетч, якщо тру не робе, щоб не падало, просто вивод помилки, прав мене обов'язково!!!
 
     if (response.ok) {
       const updateTask = await response.json();
@@ -140,17 +146,17 @@ function renderTasks() {
     taskItem.className = `task-item prio-${task.priority} ${task.done ? "done" : ""}`;
 
     taskItem.innerHTML = `
-      <button class="check-btn ${task.done ? "done" : ""}" onclick="toggleTask('${task.id}')">
-        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-      </button>
-      <div class="task-body">
-        <p class="task-text">${task.text}</p>
-        <div class="task-meta">
-          <span class="prio-badge ${task.priority}">${task.priority}</span>
-        </div>
-      </div>
-      <button class="del-btn" onclick="deleteTask('${task.id}')">✕</button>
-    `;
+  <button class="check-btn ${task.done ? "done" : ""}" onclick="toggleTask('${task.id}')">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+  </button>
+  <div class="task-body">
+    <p class="task-text" ondblclick="handleEditText('${task.id}', '${task.text}')">${task.text}</p>
+    <div class="task-meta">
+      <span class="prio-badge ${task.priority}">${task.priority}</span>
+    </div>
+  </div>
+  <button class="del-btn" onclick="deleteTask('${task.id}')">✕</button>
+`;
     tasksList.appendChild(taskItem);
   });
 
