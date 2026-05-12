@@ -213,4 +213,4 @@ if (purgeTasksBtn) {
 }
 
 // Початковий запуск
-syncTasks();s();
+syncTasks();
