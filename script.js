@@ -1,260 +1,306 @@
-/**
- * Стан додатка
- */
-let taskRegistry = [];
-let selectedPriority = "low";
-let activeFilter = "all";
+//  Стан
 
-const taskInputField = document.getElementById("taskInput");
-const createTaskBtn = document.getElementById("addBtn");
-const taskContainer = document.getElementById("tasksList");
-const purgeTasksBtn = document.getElementById("clearDone");
+const state = {
+  tasks: [],
+  priority: "low",
+  filter: "all",
+};
+
+// DOM
+
+const $ = (id) => document.getElementById(id);
+
+const dom = {
+  input:     $("taskInput"),
+  addBtn:    $("addBtn"),
+  list:      $("tasksList"),
+  clearBtn:  $("clearDone"),
+  template:  $("task-item-template"),
+  statTotal: $("statTotal"),
+  statActive:$("statActive"),
+  statDone:  $("statDone"),
+  progressBar:   $("progressFill"),
+  progressLabel: $("progressLabel"),
+};
+
+//  API
 
 /**
- * Єдина функція для всіх запитів до API.
- * Замість того щоб дублювати перевірку res.ok скрізь — робимо це в одному місці.
+ * Єдина точка для всіх запитів до сервера.
+ * Кидає Error з текстом від сервера якщо відповідь не OK.
  */
 async function apiFetch(url, options = {}) {
-  const res = await fetch(url, options);
+  const res = await fetch(url, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...options.headers },
+  });
+
+  if (res.status === 204) return null; // No Content — нормально для DELETE
+
+  const data = await res.json();
+
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `HTTP ${res.status}`);
+    throw new Error(data.error || `Помилка ${res.status}`);
   }
-  if (res.status === 204) return null; // Delete повертає порожню відповідь
-  return res.json();
+
+  return data;
 }
 
-/**
- * API-дії
- */
+//  Дії
 
-async function syncTasks() {
+async function loadTasks() {
   try {
-    taskRegistry = await apiFetch("/api/tasks");
-    renderApp();
+    state.tasks = await apiFetch("/api/tasks");
+    render();
   } catch (err) {
-    console.error("Sync failed:", err.message);
+    console.error("[sync]", err.message);
   }
 }
 
-async function createNewTask() {
-  const content = taskInputField.value.trim();
-  if (!content) return;
+async function addTask() {
+  const text = dom.input.value.trim();
+  if (!text) return;
 
   try {
     const task = await apiFetch("/api/tasks", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: content, priority: selectedPriority }),
+      body: JSON.stringify({ text, priority: state.priority }),
     });
-    taskRegistry.push(task);
-    taskInputField.value = "";
-    renderApp();
+    state.tasks.push(task);
+    dom.input.value = "";
+    render();
   } catch (err) {
-    console.error("Creation error:", err.message);
+    console.error("[add]", err.message);
   }
 }
 
-async function removeTask(taskId) {
+async function deleteTask(id) {
   try {
-    await apiFetch(`/api/tasks/${taskId}`, { method: "DELETE" });
-    taskRegistry = taskRegistry.filter((t) => t.id !== taskId);
-    renderApp();
+    await apiFetch(`/api/tasks/${id}`, { method: "DELETE" });
+    state.tasks = state.tasks.filter((t) => t.id !== id);
+    render();
   } catch (err) {
-    console.error("Deletion failed:", err.message);
+    console.error("[delete]", err.message);
   }
 }
 
-async function toggleTaskStatus(taskId) {
+async function toggleTask(id) {
   try {
-    const updated = await apiFetch(`/api/tasks/${taskId}`, { method: "PATCH" });
-    taskRegistry = taskRegistry.map((t) => (t.id === taskId ? updated : t));
-    renderApp();
+    const updated = await apiFetch(`/api/tasks/${id}`, { method: "PATCH" });
+    state.tasks = state.tasks.map((t) => (t.id === id ? updated : t));
+    render();
   } catch (err) {
-    console.error("Toggle error:", err.message);
+    console.error("[toggle]", err.message);
   }
 }
 
-async function saveInlineEdit(taskId, inputEl) {
-  const newText = inputEl.value.trim();
-  if (!newText) {
-    cancelInlineEdit(taskId);
+async function saveEdit(id, newText) {
+  const trimmed = newText.trim();
+
+  if (!trimmed) {
+    cancelEdit(id);
     return;
   }
+
   try {
-    const updated = await apiFetch(`/api/tasks/${taskId}/text`, {
+    const updated = await apiFetch(`/api/tasks/${id}/text`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: newText }),
+      body: JSON.stringify({ text: trimmed }),
     });
-    taskRegistry = taskRegistry.map((t) => (t.id === taskId ? updated : t));
-    renderApp();
+    state.tasks = state.tasks.map((t) => (t.id === id ? updated : t));
+    render();
   } catch (err) {
-    console.error("Edit error:", err.message);
-    cancelInlineEdit(taskId);
+    console.error("[edit]", err.message);
+    cancelEdit(id);
   }
 }
 
-// Повертаємо оригінальний текст без перемальовки всього списку
-function cancelInlineEdit(taskId) {
-  const task = taskRegistry.find((t) => t.id === taskId);
-  if (!task) return;
-  const node = taskContainer.querySelector(`[data-id="${taskId}"]`);
-  if (!node) return;
-  const p = document.createElement("p");
-  p.className = "task-text";
-  p.textContent = task.text;
-  p.addEventListener("dblclick", function () { makeTaskEditable(taskId, this); });
-  node.querySelector(".task-edit-input")?.replaceWith(p);
+async function clearAll() {
+  if (!confirm("Видалити всі задачі?")) return;
+
+  try {
+    // Паралельно видаляємо всі задачі
+    await Promise.all(
+        state.tasks.map((t) => apiFetch(`/api/tasks/${t.id}`, { method: "DELETE" }))
+    );
+    await loadTasks();
+  } catch (err) {
+    console.error("[clear]", err.message);
+  }
 }
 
+// Inline-редагування
+
 /**
- * Inline-редагування: замінюємо <p> на <input> прямо в задачі.
- * Ніякого prompt() — це системний діалог, його не можна стилізувати.
+ * Замінюємо <span> на <input> прямо в задачі.
+ * Ніякого prompt() — він блокує JS і не стилізується.
  */
-function makeTaskEditable(taskId, textEl) {
+function startEdit(id, spanEl) {
   const input = document.createElement("input");
   input.className = "task-edit-input";
-  input.value = textEl.textContent;
-  textEl.replaceWith(input);
+  input.value = spanEl.textContent;
+  input.maxLength = 300;
+  spanEl.replaceWith(input);
   input.focus();
   input.select();
 
-  let saved = false;
-  const save = () => {
-    if (saved) return;
-    saved = true;
-    saveInlineEdit(taskId, input);
+  let committed = false; // захист від подвійного збереження (blur + Enter)
+
+  const commit = () => {
+    if (committed) return;
+    committed = true;
+    saveEdit(id, input.value);
   };
 
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") save();
-    if (e.key === "Escape") cancelInlineEdit(taskId);
+    if (e.key === "Enter") commit();
+    if (e.key === "Escape") cancelEdit(id);
   });
-  input.addEventListener("blur", save);
+  input.addEventListener("blur", commit);
 }
+
+// Відміна редагування — повертаємо span без перемальовки всього списку
+function cancelEdit(id) {
+  const task = state.tasks.find((t) => t.id === id);
+  if (!task) return;
+
+  const input = dom.list.querySelector(`[data-id="${id}"] .task-edit-input`);
+  if (!input) return;
+
+  const span = document.createElement("span");
+  span.className = "task-text";
+  span.textContent = task.text; // textContent — безпечно, не інтерпретує HTML
+  span.addEventListener("dblclick", () => startEdit(id, span));
+  input.replaceWith(span);
+}
+
+// Рендеринг
 
 /**
- * Рендеринг
+ * Будуємо задачу через <template> — без innerHTML з рядковою магією.
+ * textContent замість innerHTML скрізь де виводимо дані від юзера — захист від XSS.
  */
+function createTaskNode(task) {
+  const clone = dom.template.content.cloneNode(true);
+  const node = clone.querySelector(".task-item");
 
-function refreshStatistics() {
-  const total = taskRegistry.length;
-  const completed = taskRegistry.filter((t) => t.done).length;
-  const ratio = total === 0 ? 0 : Math.round((completed / total) * 100);
+  node.dataset.id = task.id;
+  node.classList.toggle("done", task.done);
+  node.classList.add(`prio-${task.priority}`);
 
-  const uiTotal = document.getElementById("statTotal");
-  const uiActive = document.getElementById("statActive");
-  const uiDone = document.getElementById("statDone");
+  const checkbox = node.querySelector(".task-check");
+  checkbox.checked = task.done;
+  checkbox.dataset.action = "toggle";
+  checkbox.dataset.id = task.id;
 
-  if (uiTotal) uiTotal.textContent = total;
-  if (uiActive) uiActive.textContent = total - completed;
-  if (uiDone) uiDone.textContent = completed;
+  const span = node.querySelector(".task-text");
+  span.textContent = task.text; // НЕ innerHTML — захист від XSS
+  span.addEventListener("dblclick", () => startEdit(task.id, span));
 
-  const bar = document.getElementById("progressFill");
-  const label = document.getElementById("progressLabel");
-  if (bar) bar.style.width = `${ratio}%`;
-  if (label) label.textContent = `${ratio}%`;
+  const badge = node.querySelector(".prio-tag");
+  badge.textContent = task.priority;
+  badge.className = `prio-tag ${task.priority}`;
+
+  const delBtn = node.querySelector(".del-btn");
+  delBtn.dataset.action = "delete";
+  delBtn.dataset.id = task.id;
+
+  return node;
 }
 
-function renderApp() {
-  if (!taskContainer) return;
-  taskContainer.innerHTML = "";
+function updateStats() {
+  const total = state.tasks.length;
+  const done = state.tasks.filter((t) => t.done).length;
+  const ratio = total === 0 ? 0 : Math.round((done / total) * 100);
 
-  const displayList = taskRegistry.filter((item) => {
-    if (activeFilter === "active") return !item.done;
-    if (activeFilter === "done") return item.done;
-    if (activeFilter === "high") return item.priority === "high";
-    return true;
+  if (dom.statTotal)  dom.statTotal.textContent  = total;
+  if (dom.statActive) dom.statActive.textContent = total - done;
+  if (dom.statDone)   dom.statDone.textContent   = done;
+  if (dom.progressBar)   dom.progressBar.style.width = `${ratio}%`;
+  if (dom.progressLabel) dom.progressLabel.textContent = `${ratio}%`;
+}
+
+function getFilteredTasks() {
+  return state.tasks.filter((t) => {
+    switch (state.filter) {
+      case "active": return !t.done;
+      case "done":   return t.done;
+      case "high":   return t.priority === "high";
+      default:       return true;
+    }
   });
+}
 
-  if (displayList.length === 0) {
-    taskContainer.innerHTML = `
+function render() {
+  if (!dom.list) return;
+
+  const filtered = getFilteredTasks();
+  dom.list.innerHTML = "";
+
+  if (filtered.length === 0) {
+    dom.list.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">✦</div>
         <h3>No tasks found</h3>
         <p>Your list is currently empty.</p>
       </div>`;
-    refreshStatistics();
-    return;
+  } else {
+    // DocumentFragment — один reflow замість N перемальовок
+    const fragment = document.createDocumentFragment();
+    filtered.forEach((task) => fragment.appendChild(createTaskNode(task)));
+    dom.list.appendChild(fragment);
   }
 
-  displayList.forEach((task) => {
-    const node = document.createElement("div");
-    node.className = `task-item prio-${task.priority} ${task.done ? "done" : ""}`;
-    node.dataset.id = task.id;
-
-    node.innerHTML = `
-      <button class="check-btn ${task.done ? "done" : ""}" data-action="toggle" data-id="${task.id}">
-        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
-      </button>
-      <div class="task-body">
-        <p class="task-text">${task.text}</p>
-        <div class="task-meta">
-          <span class="prio-badge ${task.priority}">${task.priority}</span>
-        </div>
-      </div>
-      <button class="del-btn" data-action="delete" data-id="${task.id}">✕</button>
-    `;
-
-    // Подвійний клік — вмикаємо редагування
-    node.querySelector(".task-text").addEventListener("dblclick", function () {
-      makeTaskEditable(task.id, this);
-    });
-
-    taskContainer.appendChild(node);
-  });
-
-  refreshStatistics();
+  updateStats();
 }
 
-/**
- * Event delegation — один обробник на весь список замість onclick у кожному елементі
- */
-taskContainer?.addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-action]");
-  if (!btn) return;
-  const { action, id } = btn.dataset;
-  if (action === "toggle") toggleTaskStatus(id);
-  if (action === "delete") removeTask(id);
-});
+// Event delegation
 
 /**
- * Слухачі подій
+ * Один обробник на весь список замість onclick на кожному елементі.
+ * Працює і для динамічно доданих задач.
  */
+dom.list?.addEventListener("click", (e) => {
+  const target = e.target.closest("[data-action]");
+  if (!target) return;
 
-createTaskBtn?.addEventListener("click", createNewTask);
-
-taskInputField?.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") createNewTask();
+  const { action, id } = target.dataset;
+  if (action === "toggle") toggleTask(id);
+  if (action === "delete") deleteTask(id);
 });
 
+// Слухачі
+
+dom.addBtn?.addEventListener("click", addTask);
+
+dom.input?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") addTask();
+});
+
+// Обмеження довжини прямо в інпуті (UX)
+dom.input?.setAttribute("maxlength", "300");
+
+dom.clearBtn?.addEventListener("click", clearAll);
+
+// Вибір пріоритету
 document.querySelectorAll(".prio-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".prio-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
-    selectedPriority = btn.dataset.p;
+    state.priority = btn.dataset.p;
   });
 });
 
+// Фільтри
 document.querySelectorAll(".filter-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
-    activeFilter = btn.dataset.f;
-    renderApp();
+    state.filter = btn.dataset.f;
+    render();
   });
 });
 
-purgeTasksBtn?.addEventListener("click", async () => {
-  if (!confirm("Видалити всі задачі?")) return;
-  try {
-    await Promise.all(taskRegistry.map((t) => apiFetch(`/api/tasks/${t.id}`, { method: "DELETE" })));
-    await syncTasks();
-  } catch (err) {
-    console.error("Purge error:", err.message);
-  }
-});
-
 // Старт
-syncTasks();
+
+loadTasks();
