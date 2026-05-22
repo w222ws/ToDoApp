@@ -92,4 +92,4 @@ app.listen(PORT, () => {
     console.log(`Сервер залетів на http://localhost:${PORT}`);
 });
 
-// готовий ту ду лист
+// готовий ту ду листa

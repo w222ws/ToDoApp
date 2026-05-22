@@ -1,92 +1,93 @@
 <!doctype html>
 <html lang="uk">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>TaskFlow — Productivity Pro</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css"/>
     <link
-      href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap"
-      rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap"
+            rel="stylesheet"
     />
-  </head>
-  <body>
-    <div class="bg-glow"></div>
-    <div class="bg-grid"></div>
+</head>
+<body>
+<div class="bg-glow"></div>
+<div class="bg-grid"></div>
 
-    <div class="wrapper">
-      <header class="header">
+<div class="wrapper">
+    <header class="header">
         <div class="logo">
-          <div class="logo-icon">✦</div>
-          <div class="logo-meta">
-            <h1 class="logo-title">TaskFlow</h1>
-            <p class="logo-sub">Focus on what matters</p>
-          </div>
+            <div class="logo-icon">✦</div>
+            <div class="logo-meta">
+                <h1 class="logo-title">TaskFlow</h1>
+                <p class="logo-sub">Focus on what matters</p>
+            </div>
         </div>
-      </header>
+    </header>
 
-      <section class="stats-row">
+    <section class="stats-row">
         <div class="stat-card">
-          <span class="stat-num accent" id="statTotal">0</span>
-          <span class="stat-label">Total Tasks</span>
+            <span class="stat-num accent" id="statTotal">0</span>
+            <span class="stat-label">Total Tasks</span>
         </div>
         <div class="stat-card">
-          <span class="stat-num" id="statActive">0</span>
-          <span class="stat-label">In Progress</span>
+            <span class="stat-num" id="statActive">0</span>
+            <span class="stat-label">In Progress</span>
         </div>
         <div class="stat-card">
-          <span class="stat-num green" id="statDone">0</span>
-          <span class="stat-label">Completed</span>
+            <span class="stat-num green" id="statDone">0</span>
+            <span class="stat-label">Completed</span>
         </div>
-      </section>
+    </section>
 
-      <div class="progress-wrap">
+    <div class="progress-wrap">
         <div class="progress-bar">
-          <div id="progressFill" class="progress-fill"></div>
+            <div id="progressFill" class="progress-fill"></div>
         </div>
         <span class="progress-label" id="progressLabel">0%</span>
-      </div>
+    </div>
 
-      <section class="input-section">
+    <section class="input-section">
         <div class="input-card">
-          <div class="input-row">
-            <input
-              type="text"
-              id="taskInput"
-              class="task-input"
-              placeholder="What needs to be done?"
-              maxlength="140"
-            />
-            <button class="add-btn" id="addBtn">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="3"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-            </button>
-          </div>
-          <div class="priority-row">
-            <span class="priority-label">Set Priority:</span>
-            <button class="prio-btn high" data-p="high">🔴 High</button>
-            <button class="prio-btn med" data-p="med">🟡 Med</button>
-            <button class="prio-btn low active" data-p="low">🟢 Low</button>
-          </div>
+            <div class="input-row">
+                <input
+                        type="text"
+                        id="taskInput"
+                        class="task-input"
+                        placeholder="What needs to be done?"
+                        maxlength="140"
+                />
+                <button class="add-btn" id="addBtn">
+                    <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="3"
+                    >
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="priority-row">
+                <span class="priority-label">Set Priority:</span>
+                <button class="prio-btn high" data-p="high">🔴 High</button>
+                <button class="prio-btn med" data-p="med">🟡 Med</button>
+                <button class="prio-btn low active" data-p="low">🟢 Low</button>
+            </div>
         </div>
-      </section>
+    </section>
 
-      <nav class="filters">
+    <nav class="filters">
         <button class="filter-btn active" data-f="all">All</button>
         <button class="filter-btn" data-f="active">Active</button>
         <button class="filter-btn" data-f="done">Done</button>
         <button class="filter-clear" id="clearDone">Clear All ✕</button>
-      </nav>
+    </nav>
 
-      <main class="tasks-list" id="tasksList"></main>
-    </div>
-    <script src="script.js"></script>
-  </body>
+    <main class="tasks-list" id="tasksList"></main>
+</div>
+<script src="script.js"></script>
+</body>
 </html>
+<!-- кінець -->
