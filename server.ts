@@ -1,5 +1,6 @@
-const express = require("express");
-const fs = require("fs");
+import express from "express";
+import fs from "fs";
+
 const app = express();
 const PORT = 3000;
 
@@ -91,5 +92,3 @@ app.patch("/api/tasks/:id/text", validateTask, (req, res) => {
 app.listen(PORT, () => {
     console.log(`Сервер залетів на http://localhost:${PORT}`);
 });
-
-// готовий ту ду листa
