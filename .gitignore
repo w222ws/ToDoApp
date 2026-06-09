@@ -1,3 +1,8 @@
 node_modules/.idea/
 node_modules/
 .idea/
+script.js
+script.js.map
+server.js
+server.js.map
+tasks.json
