@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "ES6",
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "strict": false,
+    "types": [
+      "node"
+    ],
+    "skipLibCheck": true,
+    "sourceMap": true
+  }
+}

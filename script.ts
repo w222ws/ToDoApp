@@ -1,32 +1,31 @@
-/**
- * Конфігурація та глобальний стан додатка
- */
-let taskRegistry = [];
-let selectedPriority = "low";
-let activeFilter = "all";
+interface Task {
+    id: string;
+    text: string;
+    done: boolean;
+    priority: 'low' | 'medium' | 'high';
+}
 
-// Ініціалізація DOM-елементів
-const taskInputField = document.getElementById("taskInput");
-const createTaskBtn = document.getElementById("addBtn");
-const taskContainer = document.getElementById("tasksList");
-const purgeTasksBtn = document.getElementById("clearDone");
+let taskRegistry: Task [] = [];
+let selectedPriority: 'low' | 'medium' | 'high' = "low";
+let activeFilter: string = "all";
 
-/**
- * Робота з API (Запити до сервера)
- */
+const taskInputField = document.getElementById("taskInput") as HTMLInputElement;
+const createTaskBtn = document.getElementById("addBtn") as HTMLButtonElement;
+const taskContainer = document.getElementById("tasksList") as HTMLDivElement;
+const purgeTasksBtn = document.getElementById("clearDone") as HTMLButtonElement;
 
-async function syncTasks() {
+async function syncTasks(): Promise<void> {
     try {
         const response = await fetch("/api/tasks");
         if (!response.ok) throw new Error("Network error");
-        taskRegistry = await response.json();
+        taskRegistry = await response.json() as Task[];
         renderApp();
     } catch (err) {
         console.error("Sync failed:", err);
     }
 }
 
-async function createNewTask() {
+async function createNewTask(): Promise<void> {
     const content = taskInputField.value.trim();
     if (!content) return;
 
@@ -40,7 +39,7 @@ async function createNewTask() {
         });
 
         if (res.ok) {
-            const data = await res.json();
+            const data = await res.json() as Task;
             taskRegistry.push(data);
             taskInputField.value = "";
             renderApp();
@@ -50,7 +49,7 @@ async function createNewTask() {
     }
 }
 
-async function removeTask(taskId) {
+async function removeTask(taskId: string): Promise<void> {
     try {
         const res = await fetch(`/api/tasks/${taskId}`, {method: "DELETE"});
         if (res.ok) {
@@ -62,11 +61,11 @@ async function removeTask(taskId) {
     }
 }
 
-async function toggleTaskStatus(taskId) {
+async function toggleTaskStatus(taskId: string): Promise<void> {
     try {
         const res = await fetch(`/api/tasks/${taskId}`, {method: "PATCH"});
         if (res.ok) {
-            const updated = await res.json();
+            const updated = await res.json() as Task;
             taskRegistry = taskRegistry.map((t) => (String(t.id) === String(taskId) ? updated : t));
             renderApp();
         }
@@ -75,7 +74,7 @@ async function toggleTaskStatus(taskId) {
     }
 }
 
-async function updateTaskContent(taskId, currentText) {
+async function updateTaskContent(taskId: string, currentText: string): Promise<void> {
     const updatedText = prompt("Edit your task:", currentText);
 
     if (updatedText?.trim()) {
@@ -87,7 +86,7 @@ async function updateTaskContent(taskId, currentText) {
             });
 
             if (res.ok) {
-                const result = await res.json();
+                const result = await res.json() as Task;
                 taskRegistry = taskRegistry.map((t) => (String(t.id) === String(taskId) ? result : t));
                 renderApp();
             }
@@ -97,11 +96,7 @@ async function updateTaskContent(taskId, currentText) {
     }
 }
 
-/**
- * Логіка рендерингу інтерфейсу
- */
-
-function refreshStatistics() {
+function refreshStatistics(): void {
     const total = taskRegistry.length;
     const completed = taskRegistry.filter((t) => t.done).length;
     const ratio = total === 0 ? 0 : Math.round((completed / total) * 100);
@@ -110,9 +105,9 @@ function refreshStatistics() {
     const uiActive = document.querySelector(".stat-card #statActive");
     const uiDone = document.querySelector(".stat-card #statDone");
 
-    if (uiTotal) uiTotal.textContent = total;
-    if (uiActive) uiActive.textContent = total - completed;
-    if (uiDone) uiDone.textContent = completed;
+    if (uiTotal) uiTotal.textContent = total.toString();
+    if (uiActive) uiActive.textContent = (total - completed).toString();
+    if (uiDone) uiDone.textContent = completed.toString();
 
     const bar = document.getElementById("progressFill");
     const label = document.getElementById("progressLabel");
@@ -121,7 +116,7 @@ function refreshStatistics() {
     if (label) label.textContent = `${ratio}%`;
 }
 
-function renderApp() {
+function renderApp(): void {
     if (!taskContainer) return;
     taskContainer.innerHTML = "";
 
@@ -165,10 +160,6 @@ function renderApp() {
     refreshStatistics();
 }
 
-/**
- * Слухачі подій
- */
-
 if (createTaskBtn) createTaskBtn.onclick = createNewTask;
 
 if (taskInputField) {
@@ -177,26 +168,23 @@ if (taskInputField) {
     });
 }
 
-// Перемикання пріоритетів
 document.querySelectorAll(".prio-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
         document.querySelectorAll(".prio-btn").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        selectedPriority = btn.dataset.p;
+        selectedPriority = (btn as HTMLButtonElement).dataset.p as 'low' | 'medium' | 'high' ?? 'low';
     });
 });
 
-// Фільтрація
 document.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
         document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        activeFilter = btn.dataset.f;
+        activeFilter = (btn as HTMLButtonElement).dataset.f ?? 'all'
         renderApp();
     });
 });
 
-// Масове видалення (оптимізовано через Promise.all)
 if (purgeTasksBtn) {
     purgeTasksBtn.onclick = async () => {
         if (!confirm("Delete all current tasks?")) return;
@@ -212,5 +200,5 @@ if (purgeTasksBtn) {
     };
 }
 
-// Початковий запуск у кінці
+
 syncTasks();
