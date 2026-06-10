@@ -1,18 +1,34 @@
+type Priority = 'low' | 'medium' | 'high';
+type FilterType = 'all' | 'active' | 'done';
+
 interface Task {
     id: string;
     text: string;
     done: boolean;
-    priority: 'low' | 'medium' | 'high';
+    priority: Priority;
 }
 
-let taskRegistry: Task [] = [];
-let selectedPriority: 'low' | 'medium' | 'high' = "low";
-let activeFilter: string = "all";
+const appState = {
+    tasks: [] as Task[],
+    selectedPriority: 'low' as Priority,
+    activeFilter: 'all' as FilterType
+};
 
-const taskInputField = document.getElementById("taskInput") as HTMLInputElement;
-const createTaskBtn = document.getElementById("addBtn") as HTMLButtonElement;
-const taskContainer = document.getElementById("tasksList") as HTMLDivElement;
-const purgeTasksBtn = document.getElementById("clearDone") as HTMLButtonElement;
+const DOM = {
+    taskInput: document.getElementById("taskInput") as HTMLInputElement | null,
+    createBtn: document.getElementById("addBtn") as HTMLButtonElement | null,
+    taskContainer: document.getElementById("tasksList") as HTMLDivElement | null,
+    purgeBtn: document.getElementById("clearDone") as HTMLButtonElement | null
+};
+
+function validateElements(): void {
+    if (!DOM.taskInput || !DOM.createBtn || !DOM.taskContainer || !DOM.purgeBtn) {
+        console.error("Critical error: element not found!");
+        throw new Error("Can't start");
+    }
+}
+
+validateElements();
 
 async function syncTasks(): Promise<void> {
     try {
