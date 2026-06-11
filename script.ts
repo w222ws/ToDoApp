@@ -103,7 +103,7 @@ async function toggleTaskStatus(taskId: string): Promise<void> {
     try {
         const res = await fetch(`/api/tasks/${taskId}`, {method: "PATCH"});
 
-        if (res.ok) {
+        if (!res.ok) {
             throw new Error(`Not found status: ${res.status} ${res.statusText}`);
         }
 
@@ -129,7 +129,7 @@ async function updateTaskContent(taskId: string, currentText: string): Promise<v
                 body: JSON.stringify({text: updatedText.trim()}),
             });
 
-            if (res.ok) {
+            if (!res.ok) {
                 throw new Error(`Reject update text: ${res.status} ${res.statusText}`);
             }
 
