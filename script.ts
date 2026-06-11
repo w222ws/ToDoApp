@@ -31,60 +31,88 @@ function validateElements(): void {
 validateElements();
 
 async function syncTasks(): Promise<void> {
+
     try {
-        const response = await fetch("/api/tasks");
-        if (!response.ok) throw new Error("Network error");
-        taskRegistry = await response.json() as Task[];
+        const response = await fetch('/api/tasks');
+        if (!response.ok) {
+            throw new Error(`Reject net: ${response.status} ${response.statusText}`);
+        }
+        const data = await response.json() as Task[];
+
+        appState.tasks = data;
+
         renderApp();
-    } catch (err) {
-        console.error("Sync failed:", err);
+
+    } catch (error) {
+        console.error(error);
     }
 }
 
 async function createNewTask(): Promise<void> {
-    const content = taskInputField.value.trim();
+    const input = DOM.taskInput;
+    if (!input) return;
+
+    const content = input.value.trim();
     if (!content) return;
 
-    const payload = {text: content, priority: selectedPriority};
+    const payload = {
+        text: content,
+        priority: appState.selectedPriority
+    };
 
     try {
-        const res = await fetch("/api/tasks", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(payload),
+        const res = await fetch('/api/tasks', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
         });
 
-        if (res.ok) {
-            const data = await res.json() as Task;
-            taskRegistry.push(data);
-            taskInputField.value = "";
-            renderApp();
+        if (!res.ok) {
+            throw new Error(`No task: ${res.status} ${res.statusText}`);
         }
+
+        const newTask = await res.json() as Task;
+
+        appState.tasks.push(newTask);
+
+        input.value = '';
+
+        renderApp();
     } catch (err) {
-        console.error("Creation error:", err);
+        console.error(err);
     }
 }
 
 async function removeTask(taskId: string): Promise<void> {
     try {
-        const res = await fetch(`/api/tasks/${taskId}`, {method: "DELETE"});
-        if (res.ok) {
-            taskRegistry = taskRegistry.filter((item) => String(item.id) !== String(taskId));
-            renderApp();
+        const res = await fetch(`/api/tasks/${taskId}`, {method: 'DELETE'});
+
+        if (!res.ok) {
+            throw new Error(`Task deletion failed: ${res.status} ${res.statusText}`);
         }
+
+        appState.tasks = appState.tasks.filter((item) => String(item.id) !== String(taskId));
+
+        renderApp();
     } catch (err) {
-        console.error("Deletion failed:", err);
+        console.error(err);
     }
 }
 
 async function toggleTaskStatus(taskId: string): Promise<void> {
     try {
         const res = await fetch(`/api/tasks/${taskId}`, {method: "PATCH"});
+
         if (res.ok) {
-            const updated = await res.json() as Task;
-            taskRegistry = taskRegistry.map((t) => (String(t.id) === String(taskId) ? updated : t));
-            renderApp();
+            throw new Error(`Not found status: ${res.status} ${res.statusText}`);
         }
+
+        const updated = await res.json() as Task;
+
+        appState.tasks = appState.tasks.map((t) => (String(t.id) === String(taskId) ? updated : t));
+
+        renderApp();
+
     } catch (err) {
         console.error("Toggle error:", err);
     }
@@ -102,10 +130,15 @@ async function updateTaskContent(taskId: string, currentText: string): Promise<v
             });
 
             if (res.ok) {
-                const result = await res.json() as Task;
-                taskRegistry = taskRegistry.map((t) => (String(t.id) === String(taskId) ? result : t));
-                renderApp();
+                throw new Error(`Reject update text: ${res.status} ${res.statusText}`);
             }
+
+            const result = await res.json() as Task;
+
+            appState.tasks = appState.tasks.map((t) => (String(t.id) === String(taskId) ? result : t));
+
+            renderApp();
+
         } catch (err) {
             console.error("Edit error:", err);
         }
