@@ -15,14 +15,21 @@ const appState = {
 };
 
 const DOM = {
-    taskInput: document.getElementById("taskInput") as HTMLInputElement | null,
-    createBtn: document.getElementById("addBtn") as HTMLButtonElement | null,
-    taskContainer: document.getElementById("tasksList") as HTMLDivElement | null,
-    purgeBtn: document.getElementById("clearDone") as HTMLButtonElement | null
+    taskInput: document.getElementById('taskInput') as HTMLInputElement | null,
+    createBtn: document.getElementById('addBtn') as HTMLButtonElement | null,
+    taskContainer: document.getElementById('tasksList') as HTMLDivElement | null,
+    purgeBtn: document.getElementById('clearDone') as HTMLButtonElement | null,
+
+    uiTotal: document.getElementById('.stat-card #statTotal') as HTMLSpanElement | null,
+    uiActive: document.getElementById('.stat-card #statActive') as HTMLSpanElement | null,
+    uiDone: document.getElementById('.stat-card #statDone') as HTMLSpanElement | null,
+    progressBar: document.getElementById('progressFill') as HTMLDivElement | null,
+    progressLabel: document.getElementById('progressLabel') as HTMLSpanElement | null
 };
 
 function validateElements(): void {
-    if (!DOM.taskInput || !DOM.createBtn || !DOM.taskContainer || !DOM.purgeBtn) {
+    if (!DOM.taskInput || !DOM.createBtn || !DOM.taskContainer || !DOM.purgeBtn
+        || !DOM.uiTotal || !DOM.uiActive || !DOM.uiDone || !DOM.progressBar || !DOM.progressLabel) {
         console.error("Critical error: element not found!");
         throw new Error("Can't start");
     }
@@ -145,25 +152,22 @@ async function updateTaskContent(taskId: string, currentText: string): Promise<v
     }
 }
 
-function refreshStatistics(): void {
-    const total = taskRegistry.length;
-    const completed = taskRegistry.filter((t) => t.done).length;
+function refresStatics(): void {
+
+    const total = appState.tasks.length;
+    const completed = appState.tasks.filter((t) => t.done).length;
+    const active = total - completed;
+
     const ratio = total === 0 ? 0 : Math.round((completed / total) * 100);
 
-    const uiTotal = document.querySelector(".stat-card #statTotal");
-    const uiActive = document.querySelector(".stat-card #statActive");
-    const uiDone = document.querySelector(".stat-card #statDone");
+    if (DOM.uiTotal) DOM.uiTotal.textContent = total.toString();
+    if (DOM.uiActive) DOM.uiActive.textContent = active.toString();
+    if (DOM.uiDone) DOM.uiDone.textContent = completed.toString();
 
-    if (uiTotal) uiTotal.textContent = total.toString();
-    if (uiActive) uiActive.textContent = (total - completed).toString();
-    if (uiDone) uiDone.textContent = completed.toString();
-
-    const bar = document.getElementById("progressFill");
-    const label = document.getElementById("progressLabel");
-
-    if (bar) bar.style.width = `${ratio}%`;
-    if (label) label.textContent = `${ratio}%`;
+    if (DOM.progressBar) DOM.progressBar.style.width = `${ratio}%`
+    if (DOM.progressLabel) DOM.progressLabel.style.width = `${ratio}%`
 }
+
 
 function renderApp(): void {
     if (!taskContainer) return;
