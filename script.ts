@@ -152,7 +152,7 @@ async function updateTaskContent(taskId: string, currentText: string): Promise<v
     }
 }
 
-function refresStatics(): void {
+function refreshStatics(): void {
 
     const total = appState.tasks.length;
     const completed = appState.tasks.filter((t) => t.done).length;
@@ -168,26 +168,26 @@ function refresStatics(): void {
     if (DOM.progressLabel) DOM.progressLabel.style.width = `${ratio}%`
 }
 
-
 function renderApp(): void {
-    if (!taskContainer) return;
-    taskContainer.innerHTML = "";
+    const container = DOM.taskContainer;
+    if (!container) return;
 
-    const displayList = taskRegistry.filter((item) => {
-        if (activeFilter === "active") return !item.done;
-        if (activeFilter === "done") return item.done;
-        if (activeFilter === "high") return item.priority === "high";
+    container.innerHTML = '';
+
+    const displayList = appState.tasks.filter((item) => {
+        if (appState.activeFilter === 'active') return !item.done;
+        if (appState.activeFilter === 'done') return item.done;
         return true;
     });
 
     if (displayList.length === 0) {
-        taskContainer.innerHTML = `
+        container.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon">✦</div>
         <h3>No tasks found</h3>
         <p>Your list is currently empty.</p>
       </div>`;
-        refreshStatistics();
+        refreshStatics();
         return;
     }
 
@@ -207,13 +207,13 @@ function renderApp(): void {
       </div>
       <button class="del-btn" onclick="removeTask('${task.id}')">✕</button>
     `;
-        taskContainer.appendChild(node);
+        container.appendChild(node);
     });
 
-    refreshStatistics();
+    refreshStatics();
 }
 
-if (createTaskBtn) createTaskBtn.onclick = createNewTask;
+if (createBtn) createBtn.onclick = createNewTask;
 
 if (taskInputField) {
     taskInputField.addEventListener("keydown", (e) => {
