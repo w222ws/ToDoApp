@@ -15,16 +15,16 @@ const appState = {
 };
 
 const DOM = {
-    taskInput: document.getElementById('taskInput') as HTMLInputElement | null,
-    createBtn: document.getElementById('addBtn') as HTMLButtonElement | null,
-    taskContainer: document.getElementById('tasksList') as HTMLDivElement | null,
-    purgeBtn: document.getElementById('clearDone') as HTMLButtonElement | null,
+    taskInput: document.querySelector('#taskInput') as HTMLInputElement | null,
+    createBtn: document.querySelector('#addBtn') as HTMLButtonElement | null,
+    taskContainer: document.querySelector('#tasksList') as HTMLDivElement | null,
+    purgeBtn: document.querySelector('#clearDone') as HTMLButtonElement | null,
 
-    uiTotal: document.getElementById('.stat-card #statTotal') as HTMLSpanElement | null,
-    uiActive: document.getElementById('.stat-card #statActive') as HTMLSpanElement | null,
-    uiDone: document.getElementById('.stat-card #statDone') as HTMLSpanElement | null,
-    progressBar: document.getElementById('progressFill') as HTMLDivElement | null,
-    progressLabel: document.getElementById('progressLabel') as HTMLSpanElement | null
+    uiTotal: document.querySelector('.stat-card #statTotal') as HTMLSpanElement | null,
+    uiActive: document.querySelector('.stat-card #statActive') as HTMLSpanElement | null,
+    uiDone: document.querySelector('.stat-card #statDone') as HTMLSpanElement | null,
+    progressBar: document.querySelector('#progressFill') as HTMLDivElement | null,
+    progressLabel: document.querySelector('#progressLabel') as HTMLSpanElement | null
 };
 
 function validateElements(): void {
@@ -213,10 +213,10 @@ function renderApp(): void {
     refreshStatics();
 }
 
-if (createBtn) createBtn.onclick = createNewTask;
+if (DOM.createBtn) DOM.createBtn.onclick = createNewTask;
 
-if (taskInputField) {
-    taskInputField.addEventListener("keydown", (e) => {
+if (DOM.taskInput) {
+    DOM.taskInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") createNewTask();
     });
 }
@@ -225,7 +225,7 @@ document.querySelectorAll(".prio-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
         document.querySelectorAll(".prio-btn").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        selectedPriority = (btn as HTMLButtonElement).dataset.p as 'low' | 'medium' | 'high' ?? 'low';
+        appState.selectedPriority = (btn as HTMLButtonElement).dataset.p as 'low' | 'medium' | 'high' ?? 'low';
     });
 });
 
@@ -233,18 +233,19 @@ document.querySelectorAll(".filter-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
         document.querySelectorAll(".filter-btn").forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        activeFilter = (btn as HTMLButtonElement).dataset.f ?? 'all'
+        appState.activeFilter = ((btn as HTMLButtonElement).dataset.f as 'all' | 'active' | 'done') ?? 'all';
         renderApp();
     });
 });
 
-if (purgeTasksBtn) {
-    purgeTasksBtn.onclick = async () => {
+if (DOM.purgeBtn) {
+    DOM.purgeBtn.onclick = async () => {
         if (!confirm("Delete all current tasks?")) return;
         try {
-            const deletePromises = taskRegistry.map((t) =>
-                fetch(`/api/tasks/${t.id}`, {method: "DELETE"})
-            );
+            const deletePromises = appState.tasks
+                .filter((t) => t.done)
+                .map((t) => fetch(`/api/tasks/${t.id}`, {method: "DELETE"})
+                );
             await Promise.all(deletePromises);
             await syncTasks();
         } catch (err) {
